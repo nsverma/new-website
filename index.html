@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Instagram</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: #fafafa;
+    color: #262626;
+    font-size: 14px;
+  }
+
+  a { text-decoration: none; color: inherit; }
+
+  /* ── NAVBAR ── */
+  .navbar {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    background: #fff;
+    border-bottom: 1px solid #dbdbdb;
+    height: 54px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .navbar-inner {
+    width: 100%; max-width: 975px;
+    padding: 0 20px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .nav-logo svg { display: block; }
+  .nav-search {
+    position: relative;
+    display: flex; align-items: center;
+  }
+  .nav-search input {
+    background: #efefef;
+    border: 1px solid #dbdbdb;
+    border-radius: 8px;
+    padding: 4px 12px 4px 32px;
+    font-size: 14px;
+    width: 268px;
+    outline: none;
+    color: #262626;
+  }
+  .nav-search input::placeholder { color: #8e8e8e; text-align: center; }
+  .nav-search input:focus::placeholder { text-align: left; }
+  .nav-search svg {
+    position: absolute; left: 10px; pointer-events: none;
+  }
+  .nav-icons { display: flex; align-items: center; gap: 22px; }
+  .nav-icons a, .nav-icons button {
+    background: none; border: none; cursor: pointer;
+    display: flex; align-items: center; color: #262626;
+  }
+  .nav-icons svg { display: block; }
+
+  /* ── LAYOUT ── */
+  .page {
+    max-width: 975px;
+    margin: 0 auto;
+    padding-top: 74px;
+    display: flex;
+    gap: 28px;
+    align-items: flex-start;
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+  .feed-col { flex: 0 0 614px; min-width: 0; }
+  .sidebar-col { flex: 1; min-width: 0; position: sticky; top: 74px; }
+
+  /* ── STORIES ── */
+  .stories-card {
+    background: #fff;
+    border: 1px solid #dbdbdb;
+    border-radius: 8px;
+    padding: 16px 0;
+    margin-bottom: 24px;
+    overflow: hidden;
+  }
+  .stories-scroll {
+    display: flex;
+    gap: 16px;
+    padding: 0 16px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .stories-scroll::-webkit-scrollbar { display: none; }
+  .story-item {
+    display: flex; flex-direction: column; align-items: center;
+    gap: 6px; cursor: pointer; flex-shrink: 0;
+  }
+  .story-ring {
+    width: 66px; height: 66px;
+    border-radius: 50%;
+    padding: 2px;
+    background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .story-ring.seen {
+    background: #dbdbdb;
+  }
+  .story-ring img {
+    width: 60px; height: 60px;
+    border-radius: 50%;
+    border: 3px solid #fff;
+    object-fit: cover;
+    display: block;
+  }
+  .story-username {
+    font-size: 12px; color: #262626;
+    max-width: 66px; text-align: center;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .story-own { position: relative; }
+  .story-own .story-ring { background: #dbdbdb; }
+  .story-own .plus-badge {
+    position: absolute; bottom: 20px; right: -2px;
+    width: 20px; height: 20px;
+    background: #0095f6; border-radius: 50%;
+    border: 2px solid #fff;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .story-own .plus-badge svg { display: block; }
+
+  /* ── POST ── */
+  .post {
+    background: #fff;
+    border: 1px solid #dbdbdb;
+    border-radius: 8px;
+    margin-bottom: 24px;
+  }
+  .post-header {
+    display: flex; align-items: center;
+    padding: 14px 16px;
+    gap: 12px;
+  }
+  .post-avatar {
+    width: 32px; height: 32px; border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid #dbdbdb;
+    flex-shrink: 0;
+  }
+  .post-meta { flex: 1; }
+  .post-username { font-weight: 600; font-size: 14px; }
+  .post-location { font-size: 12px; color: #262626; }
+  .post-more {
+    background: none; border: none; cursor: pointer;
+    padding: 0 4px; color: #262626;
+  }
+  .post-image { width: 100%; display: block; aspect-ratio: 1/1; object-fit: cover; }
+  .post-actions {
+    padding: 8px 16px 4px;
+    display: flex; align-items: center; gap: 16px;
+  }
+  .post-actions button {
+    background: none; border: none; cursor: pointer;
+    padding: 0; display: flex; align-items: center; color: #262626;
+  }
+  .post-actions .bookmark { margin-left: auto; }
+  .post-likes { padding: 0 16px; font-weight: 600; font-size: 14px; margin-bottom: 6px; }
+  .post-caption { padding: 0 16px; margin-bottom: 4px; line-height: 1.5; }
+  .post-caption .username { font-weight: 600; margin-right: 4px; }
+  .post-comments-link {
+    padding: 0 16px; color: #8e8e8e; font-size: 14px;
+    display: block; margin-bottom: 4px; cursor: pointer;
+  }
+  .post-timestamp {
+    padding: 4px 16px 16px;
+    color: #8e8e8e; font-size: 10px;
+    letter-spacing: .2px; text-transform: uppercase;
+  }
+  .post-add-comment {
+    border-top: 1px solid #efefef;
+    padding: 12px 16px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .post-add-comment input {
+    flex: 1; border: none; outline: none;
+    font-size: 14px; background: transparent;
+    color: #262626;
+  }
+  .post-add-comment input::placeholder { color: #8e8e8e; }
+  .post-add-comment .post-btn {
+    background: none; border: none; cursor: pointer;
+    color: #0095f6; font-weight: 600; font-size: 14px;
+    opacity: .4;
+  }
+
+  /* ── SIDEBAR ── */
+  .sidebar-profile {
+    display: flex; align-items: center; gap: 14px;
+    margin-bottom: 20px; padding: 0 4px;
+  }
+  .sidebar-avatar {
+    width: 56px; height: 56px; border-radius: 50%;
+    object-fit: cover;
+  }
+  .sidebar-user-info .sidebar-username {
+    font-weight: 600; font-size: 14px;
+  }
+  .sidebar-user-info .sidebar-name {
+    color: #8e8e8e; font-size: 14px;
+  }
+  .sidebar-switch {
+    margin-left: auto;
+    color: #0095f6; font-weight: 600; font-size: 12px;
+    cursor: pointer;
+  }
+  .suggested-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 12px; padding: 0 4px;
+  }
+  .suggested-header span:first-child { font-weight: 600; color: #8e8e8e; font-size: 14px; }
+  .suggested-header span:last-child { font-weight: 600; font-size: 12px; cursor: pointer; color: #262626; }
+  .suggested-item {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 14px; padding: 0 4px;
+  }
+  .suggested-avatar {
+    width: 32px; height: 32px; border-radius: 50%;
+    object-fit: cover; flex-shrink: 0;
+  }
+  .suggested-info { flex: 1; min-width: 0; }
+  .suggested-username { font-weight: 600; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .suggested-reason { color: #8e8e8e; font-size: 12px; }
+  .follow-btn {
+    background: none; border: none; cursor: pointer;
+    color: #0095f6; font-weight: 600; font-size: 12px;
+  }
+  .sidebar-links {
+    margin-top: 20px; padding: 0 4px;
+    color: #c7c7c7; font-size: 11px; line-height: 1.8;
+  }
+  .sidebar-links a { color: #c7c7c7; margin-right: 4px; }
+
+  /* ── HEART ANIMATION ── */
+  .liked { color: #ed4956 !important; }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 935px) {
+    .sidebar-col { display: none; }
+    .feed-col { flex: 1; max-width: 614px; margin: 0 auto; }
+    .page { justify-content: center; }
+  }
+  @media (max-width: 614px) {
+    .page { padding: 54px 0 0; }
+    .post { border-radius: 0; border-left: none; border-right: none; margin-bottom: 12px; }
+    .stories-card { border-radius: 0; border-left: none; border-right: none; }
+    .nav-search { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <div class="navbar-inner">
+    <!-- Logo -->
+    <a class="nav-logo" href="#">
+      <svg width="103" height="29" viewBox="0 0 103 29" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <text x="0" y="22" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="22" font-style="italic" font-weight="500" fill="#262626">Instagram</text>
+      </svg>
+    </a>
+    <!-- Search -->
+    <div class="nav-search">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8e8e8e" stroke-width="2">
+        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      <input type="text" placeholder="Search">
+    </div>
+    <!-- Icons -->
+    <div class="nav-icons">
+      <a href="#">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#262626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+          <polyline points="9 22 9 12 15 12 15 22"/>
+        </svg>
+      </a>
+      <a href="#">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#262626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+        </svg>
+      </a>
+      <a href="#">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#262626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
+        </svg>
+      </a>
+      <a href="#">
+        <img src="https://i.pravatar.cc/32?img=47" style="width:28px;height:28px;border-radius:50%;object-fit:cover;border:1px solid #dbdbdb;" alt="profile">
+      </a>
+    </div>
+  </div>
+</nav>
+
+<!-- MAIN PAGE -->
+<div class="page">
+
+  <!-- FEED COLUMN -->
+  <div class="feed-col">
+
+    <!-- STORIES -->
+    <div class="stories-card">
+      <div class="stories-scroll">
+
+        <!-- Own story -->
+        <div class="story-item story-own">
+          <div class="story-ring">
+            <img src="https://i.pravatar.cc/66?img=47" alt="Your story">
+          </div>
+          <div class="plus-badge">
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="white">
+              <line x1="5" y1="1" x2="5" y2="9" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
+              <line x1="1" y1="5" x2="9" y2="5" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <span class="story-username">Your story</span>
+        </div>
+
+        <div class="story-item">
+          <div class="story-ring">
+            <img src="https://i.pravatar.cc/66?img=1" alt="alex.photo">
+          </div>
+          <span class="story-username">alex.photo</span>
+        </div>
+        <div class="story-item">
+          <div class="story-ring">
+            <img src="https://i.pravatar.cc/66?img=5" alt="sarah_j">
+          </div>
+          <span class="story-username">sarah_j</span>
+        </div>
+        <div class="story-item">
+          <div class="story-ring">
+            <img src="https://i.pravatar.cc/66?img=8" alt="mike.travels">
+          </div>
+          <span class="story-username">mike.travels</span>
+        </div>
+        <div class="story-item">
+          <div class="story-ring seen">
+            <img src="https://i.pravatar.cc/66?img=12" alt="luna_art">
+          </div>
+          <span class="story-username">luna_art</span>
+        </div>
+        <div class="story-item">
+          <div class="story-ring">
+            <img src="https://i.pravatar.cc/66?img=15" alt="jess.eats">
+          </div>
+          <span class="story-username">jess.eats</span>
+        </div>
+        <div class="story-item">
+          <div class="story-ring seen">
+            <img src="https://i.pravatar.cc/66?img=20" alt="dan_runs">
+          </div>
+          <span class="story-username">dan_runs</span>
+        </div>
+        <div class="story-item">
+          <div class="story-ring">
+            <img src="https://i.pravatar.cc/66?img=25" alt="chloe.k">
+          </div>
+          <span class="story-username">chloe.k</span>
+        </div>
+        <div class="story-item">
+          <div class="story-ring">
+            <img src="https://i.pravatar.cc/66?img=30" alt="nat_designs">
+          </div>
+          <span class="story-username">nat_designs</span>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- POST 1 -->
+    <article class="post">
+      <div class="post-header">
+        <img class="post-avatar" src="https://i.pravatar.cc/40?img=1" alt="alex.photo">
+        <div class="post-meta">
+          <div class="post-username">alex.photo</div>
+          <div class="post-location">Santorini, Greece</div>
+        </div>
+        <button class="post-more" aria-label="More options">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="#262626">
+            <circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/>
+          </svg>
+        </button>
+      </div>
+      <img class="post-image" src="https://picsum.photos/614/614?random=10" alt="Post image">
+      <div class="post-actions">
+        <button aria-label="Like" onclick="toggleLike(this)">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
+          </svg>
+        </button>
+        <button aria-label="Comment">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+          </svg>
+        </button>
+        <button aria-label="Share">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+          </svg>
+        </button>
+        <button class="bookmark" aria-label="Save">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/>
+          </svg>
+        </button>
+      </div>
+      <div class="post-likes">12,483 likes</div>
+      <div class="post-caption"><span class="username">alex.photo</span> Golden hour hitting different in Santorini 🌅 Some places just take your breath away. No filter needed when the world paints itself. ✨ <span style="color:#00376b;">#santorini #travel #goldenhour #greece</span></div>
+      <a class="post-comments-link">View all 248 comments</a>
+      <div class="post-timestamp">2 HOURS AGO</div>
+      <div class="post-add-comment">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#262626" stroke-width="1.5">
+          <circle cx="12" cy="12" r="10"/><path d="M8 13s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/>
+        </svg>
+        <input type="text" placeholder="Add a comment…">
+        <button class="post-btn">Post</button>
+      </div>
+    </article>
+
+    <!-- POST 2 -->
+    <article class="post">
+      <div class="post-header">
+        <img class="post-avatar" src="https://i.pravatar.cc/40?img=5" alt="sarah_j">
+        <div class="post-meta">
+          <div class="post-username">sarah_j</div>
+          <div class="post-location">Tokyo, Japan</div>
+        </div>
+        <button class="post-more" aria-label="More options">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="#262626">
+            <circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/>
+          </svg>
+        </button>
+      </div>
+      <img class="post-image" src="https://picsum.photos/614/614?random=20" alt="Post image">
+      <div class="post-actions">
+        <button aria-label="Like" class="liked" onclick="toggleLike(this)">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="#ed4956" stroke="#ed4956" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
+          </svg>
+        </button>
+        <button aria-label="Comment">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+          </svg>
+        </button>
+        <button aria-label="Share">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+          </svg>
+        </button>
+        <button class="bookmark" aria-label="Save">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/>
+          </svg>
+        </button>
+      </div>
+      <div class="post-likes">8,921 likes</div>
+      <div class="post-caption"><span class="username">sarah_j</span> Cherry blossom season in Tokyo is absolutely magical 🌸 Spent the whole afternoon under this tree and I have zero regrets. Spring in Japan hits differently 💕 <span style="color:#00376b;">#tokyo #cherryblossoms #japan #spring #hanami</span></div>
+      <a class="post-comments-link">View all 134 comments</a>
+      <div class="post-timestamp">5 HOURS AGO</div>
+      <div class="post-add-comment">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#262626" stroke-width="1.5">
+          <circle cx="12" cy="12" r="10"/><path d="M8 13s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/>
+        </svg>
+        <input type="text" placeholder="Add a comment…">
+        <button class="post-btn">Post</button>
+      </div>
+    </article>
+
+    <!-- POST 3 -->
+    <article class="post">
+      <div class="post-header">
+        <img class="post-avatar" src="https://i.pravatar.cc/40?img=8" alt="mike.travels">
+        <div class="post-meta">
+          <div class="post-username">mike.travels</div>
+          <div class="post-location">Patagonia, Argentina</div>
+        </div>
+        <button class="post-more" aria-label="More options">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="#262626">
+            <circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/>
+          </svg>
+        </button>
+      </div>
+      <img class="post-image" src="https://picsum.photos/614/614?random=30" alt="Post image">
+      <div class="post-actions">
+        <button aria-label="Like" onclick="toggleLike(this)">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
+          </svg>
+        </button>
+        <button aria-label="Comment">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+          </svg>
+        </button>
+        <button aria-label="Share">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+          </svg>
+        </button>
+        <button class="bookmark" aria-label="Save">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/>
+          </svg>
+        </button>
+      </div>
+      <div class="post-likes">31,204 likes</div>
+      <div class="post-caption"><span class="username">mike.travels</span> Day 3 of the W-Trek and every mile has been worth it. Nature is just showing off at this point 🏔️ The kind of silence you only find at the end of the world. <span style="color:#00376b;">#patagonia #hiking #adventure #nature #trekking</span></div>
+      <a class="post-comments-link">View all 512 comments</a>
+      <div class="post-timestamp">1 DAY AGO</div>
+      <div class="post-add-comment">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#262626" stroke-width="1.5">
+          <circle cx="12" cy="12" r="10"/><path d="M8 13s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/>
+        </svg>
+        <input type="text" placeholder="Add a comment…">
+        <button class="post-btn">Post</button>
+      </div>
+    </article>
+
+    <!-- POST 4 -->
+    <article class="post">
+      <div class="post-header">
+        <img class="post-avatar" src="https://i.pravatar.cc/40?img=12" alt="luna_art">
+        <div class="post-meta">
+          <div class="post-username">luna_art</div>
+          <div class="post-location">New York, NY</div>
+        </div>
+        <button class="post-more" aria-label="More options">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="#262626">
+            <circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/>
+          </svg>
+        </button>
+      </div>
+      <img class="post-image" src="https://picsum.photos/614/614?random=40" alt="Post image">
+      <div class="post-actions">
+        <button aria-label="Like" onclick="toggleLike(this)">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
+          </svg>
+        </button>
+        <button aria-label="Comment">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+          </svg>
+        </button>
+        <button aria-label="Share">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+          </svg>
+        </button>
+        <button class="bookmark" aria-label="Save">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/>
+          </svg>
+        </button>
+      </div>
+      <div class="post-likes">4,672 likes</div>
+      <div class="post-caption"><span class="username">luna_art</span> New piece finished at 3am because the muse doesn't care about sleep schedules 🎨🌙 Sometimes the best work comes when you stop trying. <span style="color:#00376b;">#art #painting #artist #nyc #contemporaryart</span></div>
+      <a class="post-comments-link">View all 89 comments</a>
+      <div class="post-timestamp">2 DAYS AGO</div>
+      <div class="post-add-comment">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#262626" stroke-width="1.5">
+          <circle cx="12" cy="12" r="10"/><path d="M8 13s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/>
+        </svg>
+        <input type="text" placeholder="Add a comment…">
+        <button class="post-btn">Post</button>
+      </div>
+    </article>
+
+  </div><!-- /feed-col -->
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar-col">
+
+    <!-- Profile summary -->
+    <div class="sidebar-profile">
+      <img class="sidebar-avatar" src="https://i.pravatar.cc/56?img=47" alt="your profile">
+      <div class="sidebar-user-info">
+        <div class="sidebar-username">nitanshu_v</div>
+        <div class="sidebar-name">Nitanshu Verma</div>
+      </div>
+      <span class="sidebar-switch">Switch</span>
+    </div>
+
+    <!-- Suggested -->
+    <div class="suggested-header">
+      <span>Suggested for you</span>
+      <span>See All</span>
+    </div>
+
+    <div class="suggested-item">
+      <img class="suggested-avatar" src="https://i.pravatar.cc/32?img=2" alt="jess.eats">
+      <div class="suggested-info">
+        <div class="suggested-username">jess.eats</div>
+        <div class="suggested-reason">Followed by alex.photo</div>
+      </div>
+      <button class="follow-btn">Follow</button>
+    </div>
+
+    <div class="suggested-item">
+      <img class="suggested-avatar" src="https://i.pravatar.cc/32?img=15" alt="dan_runs">
+      <div class="suggested-info">
+        <div class="suggested-username">dan_runs</div>
+        <div class="suggested-reason">Suggested for you</div>
+      </div>
+      <button class="follow-btn">Follow</button>
+    </div>
+
+    <div class="suggested-item">
+      <img class="suggested-avatar" src="https://i.pravatar.cc/32?img=22" alt="chloe.k">
+      <div class="suggested-info">
+        <div class="suggested-username">chloe.k</div>
+        <div class="suggested-reason">Followed by sarah_j + 3 more</div>
+      </div>
+      <button class="follow-btn">Follow</button>
+    </div>
+
+    <div class="suggested-item">
+      <img class="suggested-avatar" src="https://i.pravatar.cc/32?img=33" alt="nat_designs">
+      <div class="suggested-info">
+        <div class="suggested-username">nat_designs</div>
+        <div class="suggested-reason">New to Instagram</div>
+      </div>
+      <button class="follow-btn">Follow</button>
+    </div>
+
+    <div class="suggested-item">
+      <img class="suggested-avatar" src="https://i.pravatar.cc/32?img=44" alt="theo.visual">
+      <div class="suggested-info">
+        <div class="suggested-username">theo.visual</div>
+        <div class="suggested-reason">Followed by mike.travels</div>
+      </div>
+      <button class="follow-btn">Follow</button>
+    </div>
+
+    <!-- Footer links -->
+    <div class="sidebar-links">
+      <div>
+        <a href="#">About</a> · <a href="#">Help</a> · <a href="#">Press</a> · <a href="#">API</a> · <a href="#">Jobs</a> · <a href="#">Privacy</a> · <a href="#">Terms</a> · <a href="#">Locations</a> · <a href="#">Language</a>
+      </div>
+      <div style="margin-top:8px;">© 2024 INSTAGRAM FROM META</div>
+    </div>
+
+  </aside>
+
+</div><!-- /page -->
+
+<script>
+  function toggleLike(btn) {
+    const svg = btn.querySelector('svg');
+    const isLiked = btn.classList.contains('liked');
+    if (isLiked) {
+      btn.classList.remove('liked');
+      svg.setAttribute('fill', 'none');
+      svg.setAttribute('stroke', 'currentColor');
+    } else {
+      btn.classList.add('liked');
+      svg.setAttribute('fill', '#ed4956');
+      svg.setAttribute('stroke', '#ed4956');
+    }
+  }
+
+  // Enable Post button when input has content
+  document.querySelectorAll('.post-add-comment').forEach(function(container) {
+    const input = container.querySelector('input');
+    const btn = container.querySelector('.post-btn');
+    input.addEventListener('input', function() {
+      btn.style.opacity = this.value.trim() ? '1' : '0.4';
+    });
+  });
+</script>
+</body>
+</html>
